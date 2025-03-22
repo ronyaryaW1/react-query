@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
+import { useState } from 'react';
 
 interface Product {
 	id: number;
@@ -11,6 +12,8 @@ interface Product {
 }
 
 export default function Home() {
+	const [showProduct, setShowProduct] = useState<string | null>(null);
+
 	const { isLoading, data, isError } = useQuery({
 		queryKey: ['products'],
 		queryFn: async () => {
@@ -20,10 +23,24 @@ export default function Home() {
 		enabled: true, // by default it's true this is for handling the query to be called or not
 	});
 
+	// Query keys is used for refetching the data with the parameter showProduct
+	const {
+		isLoading: isDetailLoading,
+		data: details,
+		isError: isDetailError,
+	} = useQuery({
+		queryKey: ['products', showProduct], // params showProduct
+		queryFn: async () => {
+			const res = await fetch(`https://fakestoreapi.com/products/${showProduct}`);
+			return res.json();
+		},
+		enabled: showProduct !== null, // retriggers the query when showProduct is not null
+	});
+
 	if (isError) {
 		return (
 			<div>
-				<h1>something went wrong</h1>
+				<h1>Something went wrong</h1>
 			</div>
 		);
 	}
@@ -52,7 +69,8 @@ export default function Home() {
 				return (
 					<div
 						key={product.id}
-						className='bg-white p-4 shadow rounded flex flex-col items-center justify-center'
+						className='bg-white p-4 shadow rounded flex flex-col items-center justify-center cursor-pointer'
+						onClick={() => setShowProduct(product.id.toString())}
 					>
 						<Image
 							src={product.image}
@@ -67,6 +85,31 @@ export default function Home() {
 					</div>
 				);
 			})}
+
+			<div className={`fixed h-screen w-screen top-0 bg-black/50 left-0 ${showProduct ? 'flex justify-center items-center' : 'hidden'}`}>
+				<div className='w-1/2 min-h-1/2 bg-white relative flex items-center gap-8 p-8 text-black'>
+					<button
+						className='absolute top-5 right-5 cursor-pointer'
+						onClick={() => setShowProduct(null)}
+					>
+						X
+					</button>
+
+					<Image
+						src={details?.image}
+						alt={details?.title}
+						className='w-1/4'
+						width={100}
+						height={100}
+					/>
+
+					<div className='w-3/4 space-y-4'>
+						<h1 className='text-3xl font-bold'>{details?.title}</h1>
+						<p className='text-xl '>{details?.description}</p>
+						<p className='text-2xl font-bold'>{details?.price}</p>
+					</div>
+				</div>
+			</div>
 		</div>
 	);
 }
