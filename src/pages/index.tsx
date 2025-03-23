@@ -38,18 +38,22 @@ export default function Home() {
 		enabled: showProduct !== null, // retriggers the query when showProduct is not null
 	});
 
-	const mutationAddProduct = useMutation({
+	const { mutate, isPending } = useMutation({
 		mutationFn: async (product: FormData) => {
 			return await fetch('https://fakestoreapi.com/products', {
 				method: 'POST',
 				body: product,
 			});
 		},
+		onSuccess: () => {
+			alert('Product added successfully');
+			setShowAddProduct(false);
+		},
 	});
 
 	const AddProduct = (e: FormEvent) => {
 		e.preventDefault();
-		mutationAddProduct.mutate(new FormData(e.target as HTMLFormElement));
+		mutate(new FormData(e.target as HTMLFormElement));
 	};
 
 	if (isError) {
@@ -173,7 +177,7 @@ export default function Home() {
 								/>
 							</label>
 
-							<button className='w-full bg-black text-white py-2 rounded-md cursor-pointer'>Submit</button>
+							<button className='w-full bg-black text-white py-2 rounded-md cursor-pointer'>{isPending ? 'Loading..' : 'Submit'}</button>
 						</form>
 					</div>
 				</div>
